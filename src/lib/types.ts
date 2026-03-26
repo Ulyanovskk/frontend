@@ -114,10 +114,11 @@ export interface FinancialChartData {
 export interface ReportResponse {
   id: string;
   title: string;
-  content: string;
+  content_markdown: string;
   threat_level: string;
   anomaly_count: number;
   zone_count: number;
+  meta_data?: Record<string, unknown>;
   created_at: string;
 }
 

@@ -141,6 +141,7 @@ export default function MapView({ events, zones, flows, onEventClick }: MapViewP
         onViewStateChange={onViewStateChange as any}
         controller={true}
         layers={layers}
+        glOptions={{ webgl2: true }}
         getCursor={() => hoveredEvent ? 'pointer' : 'grab'}
       >
         {MAPBOX_TOKEN ? (

@@ -51,16 +51,18 @@ export default function ReportModal({ report, isOpen, onClose }: ReportModalProp
           <div className="report-content prose prose-invert max-w-none text-[13px] text-[var(--text2)] leading-[1.7]">
             <ReactMarkdown
               components={{
-                h1: ({ node, ...props }) => <h3 className="report-section-title font-[var(--cond)] text-[12px] font-semibold tracking-[0.12em] uppercase text-[var(--green-dim)] mb-[8px] pb-[4px] border-b border-[var(--line)] mt-[20px]" {...props} />,
-                h2: ({ node, ...props }) => <h4 className="font-mono-tech text-[11px] text-[var(--text)] uppercase mt-[16px] mb-[6px]" {...props} />,
-                p: ({ node, ...props }) => <p className="mb-[12px]" {...props} />,
-                ul: ({ node, ...props }) => <ul className="list-disc pl-4 mb-[12px] space-y-1" {...props} />,
-                blockquote: ({ node, ...props }) => (
-                  <div className="report-highlight bg-[rgba(255,149,0,0.08)] border-l-2 border-[var(--orange)] p-[8px_12px] my-[8px] font-mono-tech text-[12px] text-[var(--text)]" {...props} />
+                h1: ({ className, ...props }) => <h3 className="report-section-title font-[var(--cond)] text-[12px] font-semibold tracking-[0.12em] uppercase text-[var(--green-dim)] mb-[8px] pb-[4px] border-b border-[var(--line)] mt-[20px]" {...props} />,
+                h2: ({ className, ...props }) => <h4 className="font-mono-tech text-[11px] text-[var(--text)] uppercase mt-[16px] mb-[6px]" {...props} />,
+                p: ({ className, ...props }) => <p className="mb-[12px]" {...props} />,
+                ul: ({ className, ...props }) => <ul className="list-disc pl-4 mb-[12px] space-y-1" {...props} />,
+                blockquote: ({ children }) => (
+                  <div className="report-highlight bg-[rgba(255,149,0,0.08)] border-l-2 border-[var(--orange)] p-[8px_12px] my-[8px] font-mono-tech text-[12px] text-[var(--text)]">
+                    {children}
+                  </div>
                 ),
               }}
             >
-              {report.summary}
+              {report.content_markdown}
             </ReactMarkdown>
           </div>
 
