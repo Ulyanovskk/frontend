@@ -7,7 +7,7 @@
  */
 
 import React, { useState, useCallback, useMemo } from 'react';
-import Map from 'react-map-gl';
+import { Map } from 'react-map-gl/mapbox';
 import DeckGL from '@deck.gl/react';
 import { ScatterplotLayer, ArcLayer, PolygonLayer } from '@deck.gl/layers';
 import type { GeoEvent, AlertZone, ArcFlow } from '@/lib/types';
@@ -25,41 +25,39 @@ const INITIAL_VIEW_STATE = {
   bearing: 0,
 };
 
-// Couleurs par sévérité (RGBA 0-255)
+// Couleurs par défaut (RGBA 0-255) — Extraites du CSS de sentinel.html
 const SEVERITY_COLOR_MAP: Record<number, [number, number, number, number]> = {
-  1: [16, 185, 129, 180],   // vert
-  2: [16, 185, 129, 180],
-  3: [16, 185, 129, 200],
-  4: [245, 158, 11, 180],   // orange
-  5: [245, 158, 11, 200],
-  6: [249, 115, 22, 200],
-  7: [249, 115, 22, 220],
-  8: [239, 68, 68, 220],    // rouge
-  9: [239, 68, 68, 240],
-  10: [239, 68, 68, 255],
+  1: [59, 130, 246, 180],    // blue
+  2: [59, 130, 246, 180],
+  3: [59, 130, 246, 200],
+  4: [255, 149, 0, 180],     // orange
+  5: [255, 149, 0, 200],
+  6: [255, 95, 0, 200],
+  7: [255, 95, 0, 220],
+  8: [255, 59, 59, 220],     // red
+  9: [255, 59, 59, 240],
+  10: [255, 59, 59, 255],
 };
 
-// Couleurs d'arc par sévérité
 const ARC_COLORS: Record<string, [number, number, number]> = {
-  normal: [59, 130, 246],     // bleu
-  modere: [245, 158, 11],     // orange
-  eleve: [249, 115, 22],      // orange foncé
-  critique: [239, 68, 68],    // rouge
+  normal: [59, 130, 246],    // blue
+  modere: [255, 149, 0],     // orange
+  eleve: [255, 95, 0],       // orange vif
+  critique: [255, 59, 59],   // red
 };
 
-// Couleurs de zone par niveau d'alerte
 const ZONE_COLORS: Record<string, [number, number, number, number]> = {
-  faible: [16, 185, 129, 30],
-  modere: [245, 158, 11, 40],
-  eleve: [249, 115, 22, 50],
-  critique: [239, 68, 68, 50],
+  faible: [59, 130, 246, 30],
+  modere: [255, 149, 0, 40],
+  eleve: [255, 95, 0, 50],
+  critique: [255, 59, 59, 50],
 };
 
 const ZONE_LINE_COLORS: Record<string, [number, number, number, number]> = {
-  faible: [16, 185, 129, 120],
-  modere: [245, 158, 11, 150],
-  eleve: [249, 115, 22, 180],
-  critique: [239, 68, 68, 200],
+  faible: [59, 130, 246, 100],
+  modere: [255, 149, 0, 120],
+  eleve: [255, 95, 0, 150],
+  critique: [255, 59, 59, 180],
 };
 
 interface MapViewProps {
@@ -74,40 +72,32 @@ export default function MapView({ events, zones, flows, onEventClick }: MapViewP
   const [hoveredEvent, setHoveredEvent] = useState<GeoEvent | null>(null);
   const [tooltipPos, setTooltipPos] = useState<{ x: number; y: number } | null>(null);
 
-  // Couche 1 — Points d'activité (ScatterplotLayer)
+  // Couche 1 — Points d'activité (ScatterplotLayer) — "Points de contrôle"
   const scatterLayer = useMemo(() => new ScatterplotLayer({
     id: 'geo-events',
     data: events,
     pickable: true,
-    opacity: 0.9,
+    opacity: 1,
     stroked: true,
     filled: true,
     radiusScale: 1,
-    radiusMinPixels: 4,
-    radiusMaxPixels: 25,
-    lineWidthMinPixels: 1,
+    radiusMinPixels: 5,
+    radiusMaxPixels: 15,
+    lineWidthMinPixels: 2,
     getPosition: (d: GeoEvent) => [d.lng, d.lat],
-    getRadius: (d: GeoEvent) => Math.max(300, d.severity * 500),
-    getFillColor: (d: GeoEvent) => SEVERITY_COLOR_MAP[d.severity] || [59, 130, 246, 180],
-    getLineColor: [255, 255, 255, 80],
+    getRadius: 8,
+    getFillColor: (d: GeoEvent) => SEVERITY_COLOR_MAP[d.severity] || [0, 204, 255, 180],
+    getLineColor: [0, 0, 0, 120],
     onClick: (info: { object?: GeoEvent }) => {
-      if (info.object && onEventClick) {
-        onEventClick(info.object);
-      }
+      if (info.object && onEventClick) onEventClick(info.object);
     },
     onHover: (info: { object?: GeoEvent; x?: number; y?: number }) => {
       setHoveredEvent(info.object || null);
-      if (info.x !== undefined && info.y !== undefined) {
-        setTooltipPos({ x: info.x, y: info.y });
-      }
-    },
-    updateTriggers: {
-      getPosition: events.length,
-      getFillColor: events.length,
+      if (info.x !== undefined && info.y !== undefined) setTooltipPos({ x: info.x, y: info.y });
     },
   }), [events, onEventClick]);
 
-  // Couche 2 — Zones d'alerte (PolygonLayer)
+  // Couche 2 — Zones d'alerte (PolygonLayer) — "Rayon d'action"
   const polygonLayer = useMemo(() => new PolygonLayer({
     id: 'alert-zones',
     data: zones,
@@ -115,27 +105,27 @@ export default function MapView({ events, zones, flows, onEventClick }: MapViewP
     stroked: true,
     filled: true,
     wireframe: false,
-    lineWidthMinPixels: 2,
+    lineWidthMinPixels: 1.5,
     getPolygon: (d: AlertZone) => d.polygon_coords,
-    getFillColor: (d: AlertZone) => ZONE_COLORS[d.alert_level] || [239, 68, 68, 40],
-    getLineColor: (d: AlertZone) => ZONE_LINE_COLORS[d.alert_level] || [239, 68, 68, 150],
+    getFillColor: (d: AlertZone) => ZONE_COLORS[d.alert_level] || [255, 51, 51, 40],
+    getLineColor: (d: AlertZone) => ZONE_LINE_COLORS[d.alert_level] || [255, 51, 51, 150],
     getLineWidth: 2,
   }), [zones]);
 
-  // Couche 3 — Flux de transactions (ArcLayer)
+  // Couche 3 — Flux de transactions (ArcLayer) — "Flows"
   const arcLayer = useMemo(() => new ArcLayer({
     id: 'transaction-flows',
     data: flows,
     pickable: true,
-    getWidth: (d: ArcFlow) => d.is_anomaly ? 3 : 1,
+    getWidth: (d: ArcFlow) => (d.is_anomaly ? 4 : 1.5),
     getSourcePosition: (d: ArcFlow) => [d.source_lng, d.source_lat],
     getTargetPosition: (d: ArcFlow) => [d.target_lng, d.target_lat],
     getSourceColor: (d: ArcFlow) => ARC_COLORS[d.severity] || ARC_COLORS.normal,
     getTargetColor: (d: ArcFlow) => {
       const color = ARC_COLORS[d.severity] || ARC_COLORS.normal;
-      return [...color, 100] as [number, number, number, number];
+      return [...color, 80] as [number, number, number, number];
     },
-    getHeight: 0.3,
+    getHeight: 0.2, // Plus plat comme sur le screenshot
   }), [flows]);
 
   const layers = [polygonLayer, arcLayer, scatterLayer];
@@ -206,11 +196,6 @@ export default function MapView({ events, zones, flows, onEventClick }: MapViewP
         </div>
       )}
 
-      {/* Indicateur de nombre de points */}
-      <div className="absolute bottom-4 left-4 sentinel-card px-3 py-2 text-xs text-[var(--text-secondary)]">
-        <span className="status-dot status-dot-active inline-block mr-2" />
-        {events.length} événements actifs • {zones.length} zones d'alerte
-      </div>
     </div>
   );
 }

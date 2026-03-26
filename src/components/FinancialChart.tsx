@@ -1,22 +1,19 @@
 'use client';
 
 /**
- * SENTINEL — Graphiques financiers Recharts
- * Affiche les courbes et histogrammes des données financières.
+ * SENTINEL — Panel latéral d'analyse (1:1 sentinel.html)
+ * Affiche la grille de métriques, les sparklines 24h et le journal d'activité.
  */
 
 import React from 'react';
 import {
-  AreaChart, Area, BarChart, Bar,
-  XAxis, YAxis, CartesianGrid, Tooltip,
-  ResponsiveContainer, Legend,
-  ComposedChart, Line,
+  AreaChart, Area, ResponsiveContainer,
 } from 'recharts';
 import type { FinancialChartData } from '@/lib/types';
 
 interface FinancialChartProps {
   data: FinancialChartData[];
-  financialSummary?: {
+  summary?: {
     total_transactions: number;
     total_amount: number;
     anomaly_count: number;
@@ -25,232 +22,107 @@ interface FinancialChartProps {
   };
 }
 
-// Formater les montants en XAF
-function formatAmount(value: number): string {
-  if (value >= 1_000_000) return `${(value / 1_000_000).toFixed(1)}M`;
-  if (value >= 1_000) return `${(value / 1_000).toFixed(0)}K`;
-  return value.toFixed(0);
-}
+export default function FinancialChart({ data, summary }: FinancialChartProps) {
+  // Region Data simulation strictly for 1:1 match
+  const regionData = [
+    { name: 'Douala', value: 85, color: 'var(--red)' },
+    { name: 'Maroua', value: 74, color: 'var(--orange)' },
+    { name: 'Garoua', value: 62, color: 'var(--orange)' },
+    { name: 'Yaoundé', value: 51, color: 'var(--blue)' },
+    { name: 'Bertoua', value: 28, color: 'var(--blue)' },
+  ];
 
-// Formater les dates
-function formatDate(dateStr: string): string {
-  try {
-    const date = new Date(dateStr);
-    return date.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' });
-  } catch {
-    return dateStr;
-  }
-}
-
-// Tooltip personnalisé
-function CustomTooltip({ active, payload, label }: any) {
-  if (!active || !payload || !payload.length) return null;
+  // Activity Journal (Items from sentinel.html)
+  const activityItems = [
+    { type: 'RED', msg: 'Alerte critique TXN-2847 - Douala', time: '14:25', color: 'var(--red)' },
+    { type: 'ORANGE', msg: 'Nouvelle zone suspecte détectée - Far North', time: '14:19', color: 'var(--orange)' },
+    { type: 'RED', msg: 'Score Isolation Forest > 0.90 - 2 comptes', time: '14:15', color: 'var(--red)' },
+    { type: 'BLUE', msg: 'Mise à jour pipeline de données', time: '14:11', color: 'var(--blue)' },
+    { type: 'BLUE', msg: 'Fractionnement détecté - Douala', time: '14:08', color: 'var(--blue)' },
+    { type: 'GREEN', msg: 'Modèle IA ré-entraîné : précision 94.2%', time: '13:55', color: 'var(--green)' },
+  ];
 
   return (
-    <div className="sentinel-card p-3 text-xs">
-      <p className="text-[var(--text-primary)] font-semibold mb-2">
-        {formatDate(label)}
-      </p>
-      {payload.map((entry: any, index: number) => (
-        <div key={index} className="flex items-center gap-2 mb-1">
-          <div
-            className="w-2 h-2 rounded-full"
-            style={{ background: entry.color }}
-          />
-          <span className="text-[var(--text-secondary)]">{entry.name}:</span>
-          <span className="text-[var(--text-primary)] font-mono">
-            {typeof entry.value === 'number'
-              ? entry.name.includes('Montant')
-                ? `${formatAmount(entry.value)} XAF`
-                : entry.value.toLocaleString('fr-FR')
-              : entry.value
-            }
-          </span>
+    <div className="h-full flex flex-col bg-[var(--bg1)]" id="analysis-panel">
+      
+      {/* 4x Grid Metrics Section (sentinel.html) */}
+      <div className="metrics-grid grid grid-cols-2 gap-[1px] border-b border-[var(--line)] shrink-0 bg-[var(--line)]">
+        <div className="metric-cell p-[10px_12px] bg-[var(--bg1)]">
+          <div className="metric-label font-mono-tech text-[9px] text-[var(--text3)] uppercase mb-[3px]">Score global</div>
+          <div className="metric-value font-mono-tech text-[18px] text-[var(--red)] leading-none font-bold">0.84</div>
         </div>
-      ))}
-    </div>
-  );
-}
-
-export default function FinancialChart({ data, financialSummary }: FinancialChartProps) {
-  return (
-    <div className="h-full flex flex-col" id="financial-panel">
-      {/* En-tête */}
-      <div className="p-4 border-b border-[var(--border-color)]">
-        <div className="flex items-center gap-2 mb-3">
-          <span className="text-base">📊</span>
-          <h2 className="text-sm font-bold uppercase tracking-widest text-[var(--text-primary)]">
-            Analyse Financière
-          </h2>
+        <div className="metric-cell p-[10px_12px] bg-[var(--bg1)] border-l border-[var(--line)]">
+          <div className="metric-label font-mono-tech text-[9px] text-[var(--text3)] uppercase mb-[3px]">Tx suspectes</div>
+          <div className="metric-value font-mono-tech text-[18px] text-[var(--orange)] leading-none font-bold">12</div>
         </div>
-
-        {/* Résumé financier */}
-        {financialSummary && (
-          <div className="grid grid-cols-2 gap-2">
-            <div className="sentinel-card p-2 text-center">
-              <div className="text-sm font-bold text-[var(--accent-blue)]">
-                {formatAmount(financialSummary.total_amount)} XAF
-              </div>
-              <div className="text-[0.6rem] text-[var(--text-muted)] uppercase">Volume total</div>
-            </div>
-            <div className="sentinel-card p-2 text-center">
-              <div className="text-sm font-bold text-[var(--accent-red)]">
-                {financialSummary.anomaly_rate}%
-              </div>
-              <div className="text-[0.6rem] text-[var(--text-muted)] uppercase">Taux anomalie</div>
-            </div>
-          </div>
-        )}
-      </div>
-
-      {/* Graphique principal — Volume + Anomalies */}
-      <div className="flex-1 p-3 flex flex-col gap-3 overflow-y-auto">
-        <div>
-          <h3 className="text-[0.65rem] font-semibold uppercase tracking-wider text-[var(--text-muted)] mb-2">
-            Volume des transactions (30 jours)
-          </h3>
-          <div className="h-[140px]">
-            <ResponsiveContainer width="100%" height="100%">
-              <ComposedChart data={data}>
-                <defs>
-                  <linearGradient id="gradientBlue" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.4} />
-                    <stop offset="95%" stopColor="#3b82f6" stopOpacity={0} />
-                  </linearGradient>
-                </defs>
-                <CartesianGrid
-                  strokeDasharray="3 3"
-                  stroke="rgba(30, 41, 59, 0.8)"
-                  vertical={false}
-                />
-                <XAxis
-                  dataKey="date"
-                  tickFormatter={formatDate}
-                  tick={{ fontSize: 9, fill: '#64748b' }}
-                  axisLine={{ stroke: '#1e293b' }}
-                  tickLine={false}
-                  interval="preserveStartEnd"
-                />
-                <YAxis
-                  tickFormatter={formatAmount}
-                  tick={{ fontSize: 9, fill: '#64748b' }}
-                  axisLine={false}
-                  tickLine={false}
-                  width={40}
-                />
-                <Tooltip content={<CustomTooltip />} />
-                <Area
-                  type="monotone"
-                  dataKey="total_amount"
-                  name="Montant total"
-                  stroke="#3b82f6"
-                  fill="url(#gradientBlue)"
-                  strokeWidth={2}
-                />
-                <Line
-                  type="monotone"
-                  dataKey="anomaly_count"
-                  name="Anomalies"
-                  stroke="#ef4444"
-                  strokeWidth={2}
-                  dot={{ r: 3, fill: '#ef4444' }}
-                  yAxisId={0}
-                />
-              </ComposedChart>
-            </ResponsiveContainer>
-          </div>
+        <div className="metric-cell p-[10px_12px] bg-[var(--bg1)]">
+          <div className="metric-label font-mono-tech text-[9px] text-[var(--text3)] uppercase mb-[3px]">Vol. anormal</div>
+          <div className="metric-value font-mono-tech text-[18px] text-[var(--red)] leading-none font-bold">47M</div>
         </div>
-
-        {/* Graphique — Nombre de transactions */}
-        <div>
-          <h3 className="text-[0.65rem] font-semibold uppercase tracking-wider text-[var(--text-muted)] mb-2">
-            Transactions par jour
-          </h3>
-          <div className="h-[120px]">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={data}>
-                <CartesianGrid
-                  strokeDasharray="3 3"
-                  stroke="rgba(30, 41, 59, 0.8)"
-                  vertical={false}
-                />
-                <XAxis
-                  dataKey="date"
-                  tickFormatter={formatDate}
-                  tick={{ fontSize: 9, fill: '#64748b' }}
-                  axisLine={{ stroke: '#1e293b' }}
-                  tickLine={false}
-                  interval="preserveStartEnd"
-                />
-                <YAxis
-                  tick={{ fontSize: 9, fill: '#64748b' }}
-                  axisLine={false}
-                  tickLine={false}
-                  width={30}
-                />
-                <Tooltip content={<CustomTooltip />} />
-                <Bar
-                  dataKey="transaction_count"
-                  name="Transactions"
-                  fill="#3b82f6"
-                  radius={[2, 2, 0, 0]}
-                  opacity={0.8}
-                />
-                <Bar
-                  dataKey="anomaly_count"
-                  name="Anomalies"
-                  fill="#ef4444"
-                  radius={[2, 2, 0, 0]}
-                  opacity={0.9}
-                />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
-
-        {/* Score d'anomalie global */}
-        <div className="sentinel-card p-3">
-          <h3 className="text-[0.65rem] font-semibold uppercase tracking-wider text-[var(--text-muted)] mb-2">
-            Score de risque global
-          </h3>
-          <div className="flex items-center gap-3">
-            <div className="relative w-14 h-14">
-              <svg viewBox="0 0 36 36" className="w-14 h-14 -rotate-90">
-                <circle
-                  cx="18" cy="18" r="14"
-                  fill="none"
-                  stroke="rgba(30, 41, 59, 0.8)"
-                  strokeWidth="3"
-                />
-                <circle
-                  cx="18" cy="18" r="14"
-                  fill="none"
-                  stroke={financialSummary && financialSummary.anomaly_rate > 10 ? '#ef4444' :
-                    financialSummary && financialSummary.anomaly_rate > 5 ? '#f59e0b' : '#10b981'}
-                  strokeWidth="3"
-                  strokeLinecap="round"
-                  strokeDasharray={`${(financialSummary?.anomaly_rate || 0) * 0.88} 88`}
-                  className="transition-all duration-1000"
-                />
-              </svg>
-              <div className="absolute inset-0 flex items-center justify-center">
-                <span className="text-xs font-bold text-[var(--text-primary)]">
-                  {financialSummary?.anomaly_rate?.toFixed(1) || '0'}%
-                </span>
-              </div>
-            </div>
-            <div>
-              <div className="text-xs text-[var(--text-primary)] font-semibold">
-                {financialSummary && financialSummary.anomaly_rate > 10 ? 'Risque élevé' :
-                  financialSummary && financialSummary.anomaly_rate > 5 ? 'Risque modéré' : 'Risque faible'}
-              </div>
-              <div className="text-[0.6rem] text-[var(--text-muted)]">
-                {financialSummary?.anomaly_count || 0} anomalies sur {financialSummary?.total_transactions || 0} tx
-              </div>
-            </div>
-          </div>
+        <div className="metric-cell p-[10px_12px] bg-[var(--bg1)] border-l border-[var(--line)]">
+          <div className="metric-label font-mono-tech text-[9px] text-[var(--text3)] uppercase mb-[3px]">Confiance IA</div>
+          <div className="metric-value font-mono-tech text-[18px] text-[var(--green)] leading-none font-bold">91%</div>
         </div>
       </div>
+
+      {/* 24h Area Sparkline Section (sentinel.html) */}
+      <div className="chart-section p-[10px_14px] border-b border-[var(--line)] flex-shrink-0">
+        <div className="chart-section-title font-mono-tech text-[9px] text-[var(--text3)] uppercase tracking-[0.1em] mb-[8px]">Volume Transactions (24h)</div>
+        <div className="h-[60px] w-full">
+          <ResponsiveContainer width="100%" height="100%">
+            <AreaChart data={data.slice(-24)}>
+              <defs>
+                <linearGradient id="colorGreen" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor="var(--green)" stopOpacity={0.15}/>
+                  <stop offset="95%" stopColor="var(--green)" stopOpacity={0}/>
+                </linearGradient>
+              </defs>
+              <Area 
+                type="monotone" 
+                dataKey="total_amount" 
+                stroke="var(--green)" 
+                fillOpacity={1} 
+                fill="url(#colorGreen)" 
+                strokeWidth={1.5}
+                isAnimationActive={false}
+              />
+            </AreaChart>
+          </ResponsiveContainer>
+        </div>
+      </div>
+
+      {/* Regional Grid Section (Visual simulation from html) */}
+      <div className="chart-section p-[10px_14px] border-b border-[var(--line)] flex-shrink-0">
+        <div className="chart-section-title font-mono-tech text-[9px] text-[var(--text3)] uppercase tracking-[0.1em] mb-[8px]">Répartition par région</div>
+        <div className="space-y-[8px]">
+          {regionData.map((reg, i) => (
+            <div key={i} className="region-stat flex flex-col gap-[3px]">
+              <div className="flex justify-between items-center text-[10px] px-[2px]">
+                <span className="font-[var(--cond)] font-medium text-[var(--text2)] uppercase tracking-[0.05em]">{reg.name}</span>
+                <span className="font-mono-tech text-[var(--text3)] text-[9px]">{reg.value}%</span>
+              </div>
+              <div className="h-[3px] w-full bg-[var(--bg3)] rounded-[1px] overflow-hidden">
+                <div className="h-full rounded-[1px] transition-all duration-1000" style={{ width: `${reg.value}%`, background: reg.color }} />
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Activity Feed Section (sentinel.html) */}
+      <div className="panel-header px-[14px] py-[10px] border-b border-[var(--line)] shrink-0 mt-[2px]">
+        <div className="panel-title font-[var(--cond)] text-[11px] tracking-[0.14em] uppercase text-[var(--text3)] font-medium">Journal d'alertes</div>
+      </div>
+      <div className="activity-feed p-[8px_0] overflow-y-auto custom-scrollbar flex-1 h-full">
+        {activityItems.map((item, i) => (
+          <div key={i} className="activity-item px-[14px] py-[5px] flex gap-[8px] items-start group">
+            <div className="activity-dot w-[5px] h-[5px] rounded-full mt-[4px] shrink-0 animate-pulse" style={{ background: item.color }} />
+            <div className="activity-text text-[var(--text2)] text-[11px] leading-[1.4] group-hover:text-[var(--text)]">{item.msg}</div>
+            <div className="activity-time font-mono-tech text-[9px] text-[var(--text3)] ml-auto shrink-0">{item.time}</div>
+          </div>
+        ))}
+      </div>
+      
     </div>
   );
 }
